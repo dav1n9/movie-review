@@ -14,15 +14,16 @@
 <body>
     <nav class="navbar bg-body-tertiary">
         <div class="container">
-        <a class="navbar-brand" href="#">
-            <img src="/docs/5.3/assets/brand/bootstrap-logo.svg" alt="Logo" width="30" height="24">
+        <a class="navbar-brand" href="/movie">
+            <img src="https://e7.pngegg.com/pngimages/593/726/png-clipart-film-director-clapperboard-film-festival-filmmaking-actor-celebrities-camera-icon.png" alt="Logo" width="120" height="90">
         </a>
         </div>
     </nav> 
 
     <!-- 영화 정보 -->
     <div class="container px-4 py-5" id="featured-3">
-    <h2 class="pb-2 border-bottom"> {{ data.movie_info.movieNm }}</h2>
+    <h2> {{ data.movie_info.movieNm }}</h2>
+    <h6 class="pb-2 border-bottom"> {{ data.movie_info.movieNmEn }} </h6>
         <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
             <div class="feature col">
                 <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-2 mb-3" style="width: 64px; height: 64px; border-radius: 50%;">
@@ -31,7 +32,8 @@
                     </svg>
                 </div>
             <p>영화 개봉일</p>
-            <h3 class="fs-2 text-body-emphasis">2024.06.12</h3>
+            <h3 class="fs-2 text-body-emphasis">{{ data.movie_info.openDt }}</h3>
+            <h6>{{ data.movie_info.prdtStatNm }}</h6>
             </div>
 
             <div class="feature col">
@@ -40,8 +42,8 @@
                         <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"/>
                     </svg>
                 </div>
-            <p>누적 관객수</p>
-            <h3 class="fs-2 text-body-emphasis">2000000</h3>
+            <p>장르</p>
+            <h3 class="fs-2 text-body-emphasis">{{ data.movie_info.genreAlt }}</h3>
             </div>
 
             <div class="feature col">
@@ -70,7 +72,8 @@
                         <div class="form-floating mb-3">
                             <input type="hidden" id="reviewId" name="review_id" value="">
                             <!-- hidden 요소를 사용하여 사용자에게 보이지 않고 '영화 코드' 정보를 서버로 전송 -->
-                            <input type="hidden" class="form-control rounded-3" id="movieCd" name="movie_cd" value="{{ data.movie_cd }}">
+                            <input type="hidden" class="form-control rounded-3" id="movieCd" name="movie_cd" value="{{ data.movie_info.movieCd }}">
+                            <input type="hidden" class="form-control rounded-3" id="movieNm" name="movie_nm" value="{{ data.movie_info.movieNm }}">
                         </div>
                         <div class="form-floating mb-3">
                             <input type="text" class="form-control rounded-3" id="username" name="username">
@@ -110,7 +113,11 @@
                 <div class="d-flex gap-2 w-100 justify-content-between">
                     <div>
                         <h6 class="mb-0">{{ review.username }}</h6>
-                        <p class="mb-0 opacity-75">{{ review.rating }}</p>
+                        <p class="mb-0 opacity-75">
+                            {% for _ in range( review.rating ) %}
+                                ⭐
+                            {% endfor %}
+                        </p>
                         <p class="mb-0 opacity-75">{{ review.content }}</p>
                     </div>
                     <small class="opacity-50 text-nowrap">{{ review.created_at }}</small>

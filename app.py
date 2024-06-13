@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for
 import os
 from flask_sqlalchemy import SQLAlchemy
@@ -21,7 +22,7 @@ class Review(db.Model):
     username = db.Column(db.String, nullable=False)
     content = db.Column(db.String, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
-    # created_at = db.Column(db.DateTime, default=datetime.now)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     def __repr__(self):
         return f'{self.movie_cd} : {self.content} by {self.username}, rating: {self.rating}'
@@ -65,19 +66,35 @@ def movie():
 
     return render_template('movie.html', movies=movies, movie_Name=movieNm)
 
+@app.route('/review/<movie_nm>')
+def review_with_movienm(movie_nm):
+    res = requests.get(f"http://kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json?key=f5eef3421c602c6cb7ea224104795888&movieNm={movie_nm}")
+
+    rjson = res.json()
+    movie_info = rjson["movieListResult"]["movieList"][0]
+    movie_cd = movie_info['movieCd']
+
+    review_list = Review.query.filter_by(movie_cd=movie_cd).all()
+    
+    movie = {
+        'movie_info': movie_info,
+        'reviews': review_list,
+    }
+    return render_template("review.html", data = movie)
+
 @app.route('/review')
 def review():
     query = request.args.get('query')
     res = requests.get(f"http://kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json?key=f5eef3421c602c6cb7ea224104795888&movieNm={query}")
 
     rjson = res.json()
+    
     movie_info = rjson["movieListResult"]["movieList"][0]
     movie_cd = movie_info['movieCd']
 
-    review_list = Review.query.filter_by(id=movie_cd).all()
+    review_list = Review.query.filter_by(movie_cd=movie_cd).all()
     
     movie = {
-        'movie_cd': '12345',
         'movie_info': movie_info,
         'reviews': review_list,
     }
@@ -91,12 +108,14 @@ def review_create():
     rating_receive = request.form.get("rating")
     movie_receive = request.form.get("movie_cd")
 
+    movienm_receive = request.form.get("movie_nm")
+
     # 데이터 DB에 저장
     review = Review(movie_cd = movie_receive, username = username_receive, content = content_receive, rating = rating_receive)
     db.session.add(review)
     db.session.commit()
 
-    return redirect(url_for('review'))
+    return redirect(url_for('review_with_movienm', movie_nm=movienm_receive))
 
 # 리뷰 삭제
 @app.route('/review/<review_id>', methods=['POST'])
@@ -105,7 +124,7 @@ def review_delete(review_id):
     db.session.delete(delete_data)
     db.session.commit()
 
-    return redirect(url_for('review'))
+    return redirect(url_for('movie'))
 
 # 리뷰 수정
 @app.route('/review/update', methods=['POST'])
@@ -118,10 +137,12 @@ def review_update():
     update_data.rating = request.form.get("rating")
     update_data.movie_cd = request.form.get("movie_cd")
 
+    movienm_receive = request.form.get("movie_nm")
+
     db.session.add(update_data)
     db.session.commit()
 
-    return redirect(url_for('review'))
+    return redirect(url_for('review_with_movienm', movie_nm=movienm_receive))
 
 if __name__ == "__main__":
     app.run(debug=True)
