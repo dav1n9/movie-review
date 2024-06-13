@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, g
 import os
 from flask_sqlalchemy import SQLAlchemy
 
@@ -19,7 +19,8 @@ db = SQLAlchemy(app)
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     movie_cd = db.Column(db.String, nullable=False)
-    username = db.Column(db.String, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
+    user = db.relationship('User', backref=db.backref('review_set')) 
     content = db.Column(db.String, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
@@ -27,8 +28,37 @@ class Review(db.Model):
     def __repr__(self):
         return f'{self.movie_cd} : {self.content} by {self.username}, rating: {self.rating}'
 
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+
 with app.app_context():
     db.create_all()
+
+
+
+
+# 로그인된 사용자가 있다고 가정
+@app.before_request
+def load_logged_in_user():
+    find = User.query.filter_by(username="김다빈").first()
+    if find is None:
+        new_user = User(username="김다빈", password="123123", email="ddd@ddd.com")
+        db.session.add(new_user)
+        db.session.commit()
+        g.user = new_user
+    else:
+        g.user = find
+
+@app.route('/mypage')
+def mypage():
+
+    return f"user 이름은 {g.user.username}"
+
+
+
 
 
 def get_box_office():

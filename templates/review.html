@@ -17,6 +17,10 @@
         <a class="navbar-brand" href="/movie">
             <img src="https://e7.pngegg.com/pngimages/593/726/png-clipart-film-director-clapperboard-film-festival-filmmaking-actor-celebrities-camera-icon.png" alt="Logo" width="120" height="90">
         </a>
+        <!-- 마이페이지 버튼 -->
+        <ul class="navbar-nav ml-auto">
+            <a href="/mypage" class="btn btn-outline-secondary">마이페이지</a>
+        </ul>
         </div>
     </nav> 
 
@@ -105,14 +109,20 @@
     <!-- 리뷰 -->
     <div class="container px-4 py-5">
         <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-3">
-            <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#exampleModal">리뷰 작성하기</button>
+            <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#exampleModal">리뷰 작성하기</button>
         </div>
         <div class="list-group">
+            {% if not data.reviews %}
+            <div class="d-flex gap-2 w-100 justify-content-between">
+                <h1>아직 리뷰가 없어요...</h1>
+            </div>
+            {% endif %}
+
             {% for review in data.reviews %}
             <a href="#" class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
                 <div class="d-flex gap-2 w-100 justify-content-between">
                     <div>
-                        <h6 class="mb-0">{{ review.username }}</h6>
+                        <h6 class="mb-0">{{ review.user.username }}</h6>
                         <p class="mb-0 opacity-75">
                             {% for _ in range( review.rating ) %}
                                 ⭐
@@ -122,32 +132,19 @@
                     </div>
                     <small class="opacity-50 text-nowrap">{{ review.created_at }}</small>
                 </div>
-                <form action="{{ url_for('review_delete', review_id=review.id) }}" method="POST">
-                    <button class="btn btn-outline-danger btn-sm" type="submit" style="width: 2rem; height: 2rem; padding: 0;">
-                    <i class="bi bi-x" style="font-size: 1rem;"></i>
+                <!-- 로그인한 사용자와 글쓴이가 같은 경우에만 버튼이 보이도록 함. -->
+                {% if g.user == review.user %}
+                    <form action="{{ url_for('review_delete', review_id=review.id) }}" method="POST">
+                        <button class="btn btn-outline-danger btn-sm" type="submit" style="width: 2rem; height: 2rem; padding: 0;">
+                        <i class="bi bi-x" style="font-size: 1rem;"></i>
+                        </button>
+                    </form>
+                    <button class="btn btn-outline-warning btn-sm" type="button" style="width: 2rem; height: 2rem; padding: 0;" onclick="editReview('{{ review.id }}', '{{ review.username }}', '{{ review.rating }}', '{{ review.content }}')">
+                        <i class="bi bi-pencil" style="font-size: 1rem;"></i>
                     </button>
-                </form>
-                <button class="btn btn-outline-warning btn-sm" type="button" style="width: 2rem; height: 2rem; padding: 0;" onclick="editReview('{{ review.id }}', '{{ review.username }}', '{{ review.rating }}', '{{ review.content }}')">
-                    <i class="bi bi-pencil" style="font-size: 1rem;"></i>
-                </button>
-                </a>
-            {% endfor %}
-
-            <a href="#" class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
-            <div class="d-flex gap-2 w-100 justify-content-between">
-                <div>
-                    <h6 class="mb-0">User Name</h6>
-                    <p class="mb-0 opacity-75">rating ⭐⭐⭐</p>
-                    <p class="mb-0 opacity-75">Some placeholder content in a paragraph.</p>
-                </div>
-                <small class="opacity-50 text-nowrap">now</small>
-            </div>
-            <button class="btn btn-outline-danger btn-sm" type="button" style="width: 2rem; height: 2rem; padding: 0;">
-                <i class="bi bi-x" style="font-size: 1rem;"></i>
-            </button>
+                {% endif %}
             </a>
-
-            
+            {% endfor %}
         </div>
     </div>
 
