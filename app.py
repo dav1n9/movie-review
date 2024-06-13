@@ -69,17 +69,21 @@ def movie():
 @app.route('/review/<movie_nm>')
 def review_with_movienm(movie_nm):
     res = requests.get(f"http://kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json?key=f5eef3421c602c6cb7ea224104795888&movieNm={movie_nm}")
-
     rjson = res.json()
-    movie_info = rjson["movieListResult"]["movieList"][0]
+
+    # movieList에서 movie_nm 필드가 query 변수와 동일한 영화 정보 찾기
+    for movie in rjson["movieListResult"]["movieList"]:
+        if movie['movieNm'] == movie_nm:
+            movie_info = movie
+            break
+
+    # movie_nm 필드가 없거나 찾지 못한 경우, 0번 인덱스의 영화 정보 선택
+    if movie_info is None:
+        movie_info = rjson["movieListResult"]["movieList"][0]
+
     movie_cd = movie_info['movieCd']
 
-    review_list = Review.query.filter_by(movie_cd=movie_cd).all()
-    
-    movie = {
-        'movie_info': movie_info,
-        'reviews': review_list,
-    }
+    review_list = Review.query.filter_by(movie_cd=movie_cd)
     return render_template("review.html", data = movie)
 
 @app.route('/review')
@@ -88,11 +92,20 @@ def review():
     res = requests.get(f"http://kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json?key=f5eef3421c602c6cb7ea224104795888&movieNm={query}")
 
     rjson = res.json()
-    
-    movie_info = rjson["movieListResult"]["movieList"][0]
+
+    # movieList에서 movie_nm 필드가 query 변수와 동일한 영화 정보 찾기
+    for movie in rjson["movieListResult"]["movieList"]:
+        if movie['movieNm'] == query:
+            movie_info = movie
+            break
+
+    # movie_nm 필드가 없거나 찾지 못한 경우, 0번 인덱스의 영화 정보 선택
+    if movie_info is None:
+        movie_info = rjson["movieListResult"]["movieList"][0]
+
     movie_cd = movie_info['movieCd']
 
-    review_list = Review.query.filter_by(movie_cd=movie_cd).all()
+    review_list = Review.query.filter_by(movie_cd=movie_cd)
     
     movie = {
         'movie_info': movie_info,
