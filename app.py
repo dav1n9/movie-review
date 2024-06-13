@@ -84,6 +84,12 @@ def review_with_movienm(movie_nm):
     movie_cd = movie_info['movieCd']
 
     review_list = Review.query.filter_by(movie_cd=movie_cd)
+
+    movie = {
+        'movie_info': movie_info,
+        'reviews': review_list,
+    }
+    
     return render_template("review.html", data = movie)
 
 @app.route('/review')
