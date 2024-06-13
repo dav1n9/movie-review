@@ -80,8 +80,7 @@
                             <input type="hidden" class="form-control rounded-3" id="movieNm" name="movie_nm" value="{{ data.movie_info.movieNm }}">
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="text" class="form-control rounded-3" id="username" name="username">
-                            <label for="username">이름</label>
+                            <p>이름 : {{ g.user.username }}</p>
                         </div>
                         <div class="form-floating mb-3">
                             <textarea class="form-control rounded-3" id="content" placeholder="Your message" style="height: 10rem;" name="content"></textarea>
@@ -139,7 +138,7 @@
                         <i class="bi bi-x" style="font-size: 1rem;"></i>
                         </button>
                     </form>
-                    <button class="btn btn-outline-warning btn-sm" type="button" style="width: 2rem; height: 2rem; padding: 0;" onclick="editReview('{{ review.id }}', '{{ review.username }}', '{{ review.rating }}', '{{ review.content }}')">
+                    <button class="btn btn-outline-warning btn-sm" type="button" style="width: 2rem; height: 2rem; padding: 0;" onclick="editReview('{{ review.id }}', '{{ review.rating }}', '{{ review.content }}')" data-bs-toggle="modal" data-bs-target="#exampleModal">
                         <i class="bi bi-pencil" style="font-size: 1rem;"></i>
                     </button>
                 {% endif %}
@@ -153,10 +152,9 @@
         integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
         crossorigin="anonymous"></script>
     <script>
-        function editReview(id, username, rating, content) {
+        function editReview(id, rating, content) {
             document.getElementById('reviewForm').action = "{{ url_for('review_update') }}";
             document.getElementById('reviewId').value = id;
-            document.getElementById('username').value = username;
             document.getElementById('content').value = content;
             document.getElementById('ratingSelect').value = rating;
             var modal = new bootstrap.Modal(document.getElementById('exampleModal'));

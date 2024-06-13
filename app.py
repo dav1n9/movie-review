@@ -152,7 +152,6 @@ def review():
 # 리뷰 생성
 @app.route('/review', methods=['POST'])
 def review_create():
-    username_receive = request.form.get("username")
     content_receive = request.form.get("content")
     rating_receive = request.form.get("rating")
     movie_receive = request.form.get("movie_cd")
@@ -160,7 +159,7 @@ def review_create():
     movienm_receive = request.form.get("movie_nm")
 
     # 데이터 DB에 저장
-    review = Review(movie_cd = movie_receive, username = username_receive, content = content_receive, rating = rating_receive)
+    review = Review(movie_cd = movie_receive, user = g.user, content = content_receive, rating = rating_receive)
     db.session.add(review)
     db.session.commit()
 
@@ -181,7 +180,6 @@ def review_update():
     review_id = int(request.form.get('review_id'))
 
     update_data = Review.query.filter_by(id=review_id).first()
-    update_data.username  = request.form.get("username")
     update_data.content = request.form.get("content")
     update_data.rating = request.form.get("rating")
     update_data.movie_cd = request.form.get("movie_cd")
