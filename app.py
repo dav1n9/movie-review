@@ -1,27 +1,22 @@
-from flask import Flask, render_template
+from datetime import datetime
+from flask import Flask, render_template, request, redirect, url_for
 import os
 from flask_sqlalchemy import SQLAlchemy
 
-import urllib.request as req
-
-import requests
-from bs4 import BeautifulSoup
-
-
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = \
-    'sqlite:///' + os.path.join(basedir, 'database.db')
+app.config['SQLALCHEMY_DATABASE_URI'] =\
+        'sqlite:///' + os.path.join(basedir, 'database.db')
 
 db = SQLAlchemy(app)
 
-class Song(db.Model):
+class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     movie_cd = db.Column(db.String, nullable=False)
     username = db.Column(db.String, nullable=False)
     content = db.Column(db.String, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     def __repr__(self):
         return f'{self.movie_cd} : {self.content} by {self.username}, rating: {self.rating}'
@@ -29,33 +24,57 @@ class Song(db.Model):
 with app.app_context():
     db.create_all()
 
-def get_box_office():
-    code=req.urlopen("http://www.cgv.co.kr/movies/?lt=1&ft=0")
-    soup=BeautifulSoup(code, "html.parser")
+    
 
-    movies = []
-    movie_list = soup.select("li")
-    for movie in movie_list:
-        rank = movie.select_one("strong.rank")
-        # info = movie.select_one("div.box-contents")
-        title = movie.select_one("strong.title")
-        img_url = movie.select_one("img")
+@app.route('/review')
+def review():
 
-        if title and img_url:  # title과 img_url이 모두 존재하는 경우에만 추가
-            movies.append({
-                'title': title.string,
-                'image': img_url.get("src"),
-                'rank': rank.string
-            })
+    review_list = Review.query.all()
+    movie = {
+        'movie_cd': '12345',
+        'reviews': review_list,
+    }
+    return render_template("review.html", data = movie)
 
-    return movies
+# 리뷰 생성
+@app.route('/review', methods=['POST'])
+def review_create():
+    username_receive = request.form.get("username")
+    content_receive = request.form.get("content")
+    rating_receive = request.form.get("rating")
+    movie_receive = request.form.get("movie_cd")
 
-@app.route('/')
-def movie():
-    movies = get_box_office()
+    # 데이터 DB에 저장
+    review = Review(movie_cd = movie_receive, username = username_receive, content = content_receive, rating = rating_receive)
+    db.session.add(review)
+    db.session.commit()
 
-    print(get_box_office())
-    return render_template('movie.html', movies=movies)
+    return redirect(url_for('review'))
+
+# 리뷰 삭제
+@app.route('/review/<review_id>', methods=['POST'])
+def review_delete(review_id):
+    delete_data = Review.query.filter_by(id=review_id).first()
+    db.session.delete(delete_data)
+    db.session.commit()
+
+    return redirect(url_for('review'))
+
+# 리뷰 수정
+@app.route('/review/update', methods=['POST'])
+def review_update():
+    review_id = int(request.form.get('review_id'))
+
+    update_data = Review.query.filter_by(id=review_id).first()
+    update_data.username  = request.form.get("username")
+    update_data.content = request.form.get("content")
+    update_data.rating = request.form.get("rating")
+    update_data.movie_cd = request.form.get("movie_cd")
+
+    db.session.add(update_data)
+    db.session.commit()
+
+    return redirect(url_for('review'))
 
 if __name__ == "__main__":
     app.run(debug=True)
