@@ -27,13 +27,6 @@
             width: 120px;
             height: 90px;
         }
-        .search-container {
-            margin-top: 50px;
-            margin-bottom: 50px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
         .search-input {
             padding: 15px;
             border: none;
@@ -127,6 +120,7 @@
             right: 20px;
         }
         .login-button {
+            margin-right: 10px;
             padding: 10px 20px;
             background-color: #007bff;
             color: #fff;
@@ -138,62 +132,12 @@
         .login-button:hover {
             background-color: #0056b3;
         }
-        /* 모달 스타일 */
-        .modal {
-            display: none;
-            justify-content: center;
-            align-items: center;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgb(0, 0, 0);
-            background-color: rgba(0, 0, 0, 0.4);
-        }
-        .modal-content {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background-color: #fefefe;
-            margin: auto;
-            border: 1px solid #888;
-            width: 500px;
-            max-width: 500px;
-            height: 300px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .close {
-            position: absolute;
-            right: 20px;
-            top: 20px;
-            color: #aaa;
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
         .login-form input {
             width: 80%;
             padding: 15px;
             margin: 10px 0;
             border: 1px solid #ccc;
             border-radius: 5px;
-        }
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
         }
         .login-form button {
             margin-top: 30px;
@@ -209,6 +153,9 @@
         .login-form button:hover {
             background-color: #0056b3;
         }
+        .user-greeting {
+            margin-right: 20px;
+        }
     </style>
 </head>
 <body>
@@ -220,19 +167,15 @@
     <input type="text" name="query" class="search-input" placeholder="영화 검색...">
     <button type="submit" class="search-button">검색</button>
 </form>
-<div class="login-container">
-    <button class="login-button" onclick="openLoginModal()">로그인</button>
+<div class="login-container" id="auth-buttons">
+    <button class="login-button" onclick="window.location.href='/login'">로그인</button>
+    <button class="login-button" onclick="window.location.href='/signup'">회원가입</button>
 </div>
-<div id="loginModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeLoginModal()">&times;</span>
-        <form class="login-form" id="loginForm">
-            <input type="text" id="username" name="username" placeholder="사용자 이름" required>
-            <input type="password" id="password" name="password" placeholder="비밀번호" required>
-            <button type="submit">로그인</button>
-        </form>
-    </div>
+<div class="login-container" id="logout-button" style="display: none;">
+    <span id="user-greeting" class="user-greeting"></span>
+    <button class="login-button" onclick="logout()">로그아웃</button>
 </div>
+
 <h1></h1>
 <div class="container">
     {% for movie in movies %}
@@ -243,46 +186,63 @@
                 <div class="movie-title">{{ movie.title }}</div>
                 <div class="card-info">
                     <h2 class="text">{{ movie.title }}</h2>
-                    <pc class="text">영화 설명</pc>
+                    <p class="text">영화 설명</p>
                 </div>
             </div>
         </a>
     {% endfor %}
 </div>
 
-
 <script>
-    function openLoginModal() {
-        document.getElementById('loginModal').style.display = 'flex';
-    }
 
-    function closeLoginModal() {
-        document.getElementById('loginModal').style.display = 'none';
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+        // 로그인 상태 확인
+        fetch('/logged_in', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.msg === 'User is logged in') {
+                    // 로그아웃 버튼과 유저 환영 활성화 및 로그인 버튼과 회원가입 버튼 비활성화
+                    document.getElementById('auth-buttons').style.display = 'none';
+                    document.getElementById('logout-button').style.display = 'block';
+                    fetch('/username', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    })
+                        .then(response => response.json())
+                        .then(user => {
+                            if (user.username) {
+                                document.getElementById('user-greeting').innerText = `${user.username}님 안녕하세요!`;
+                            }
+                        });
+                }
+            });
+    });
 
-    document.getElementById('loginForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-
-        fetch('/login', {
+    function logout() {
+        fetch('/logout', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ username, password }),
         })
-            .then(response => response.json())
-            .then(data => {
-                if (data.access_token) {
-                    localStorage.setItem('token', data.access_token);
-                    closeLoginModal();
-                    alert('로그인 성공');
+            .then(response => {
+                if (response.ok) {
+                    // 로그아웃 버튼과 유저 환영 비활성화 및 로그인 버튼과 회원가입 버튼 활성화
+                    document.getElementById('auth-buttons').style.display = 'block';
+                    document.getElementById('logout-button').style.display = 'none';
+                    alert('로그아웃 성공');
                 } else {
-                    alert('로그인 실패: ' + data.msg);
+                    alert('로그아웃 실패');
                 }
             });
-    });
+    }
 
     function submitReview(event) {
         event.preventDefault();
