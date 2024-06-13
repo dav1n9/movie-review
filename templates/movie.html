@@ -24,8 +24,8 @@
             margin-top: 50px;
         }
         .logo img {
-            width: 150px;
-            height: 150px;
+            width: 120px;
+            height: 90px;
         }
         .search-container {
             margin-top: 50px;
@@ -213,7 +213,7 @@
 </head>
 <body>
 <div class="logo">
-    <img id="img" src="https://www.hanbit.co.kr/data/ebook/E2375873090_l.jpg" alt="로고">
+    <img id="img" src="https://e7.pngegg.com/pngimages/593/726/png-clipart-film-director-clapperboard-film-festival-filmmaking-actor-celebrities-camera-icon.png" alt="로고">
 </div>
 <div class="line"></div>
 <form action="{{ url_for('review') }}">
@@ -233,17 +233,20 @@
         </form>
     </div>
 </div>
+<h1></h1>
 <div class="container">
     {% for movie in movies %}
-        <div class="card">
-            <div class="rank">{{ movie.rank }}</div>
-            <img src="{{ movie.image }}" alt="{{ movie.title }}" class="poster-image">
-            <div class="movie-title">{{ movie.title }}</div>
-            <div class="card-info">
-                <h2 class="text">{{ movie.title }}</h2>
-                <pc class="text">영화 설명</pc>
+        <a href="{{ url_for('review_with_movienm', movie_nm=movie.title) }}">
+            <div class="card">
+                <div class="rank">{{ movie.rank }}</div>
+                <img src="{{ movie.image }}" alt="{{ movie.title }}" class="poster-image">
+                <div class="movie-title">{{ movie.title }}</div>
+                <div class="card-info">
+                    <h2 class="text">{{ movie.title }}</h2>
+                    <pc class="text">영화 설명</pc>
+                </div>
             </div>
-        </div>
+        </a>
     {% endfor %}
 </div>
 
