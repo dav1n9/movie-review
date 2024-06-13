@@ -216,10 +216,10 @@
     <img id="img" src="https://www.hanbit.co.kr/data/ebook/E2375873090_l.jpg" alt="로고">
 </div>
 <div class="line"></div>
-<div class="search-container">
-    <input type="text" class="search-input" placeholder="영화 검색...">
-    <button class="search-button">검색</button>
-</div>
+<form action="{{ url_for('review') }}">
+    <input type="text" name="query" class="search-input" placeholder="영화 검색...">
+    <button type="submit" class="search-button">검색</button>
+</form>
 <div class="login-container">
     <button class="login-button" onclick="openLoginModal()">로그인</button>
 </div>

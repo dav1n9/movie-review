@@ -1,7 +1,12 @@
-from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for
 import os
 from flask_sqlalchemy import SQLAlchemy
+
+import urllib.request as req
+
+import requests
+from bs4 import BeautifulSoup
+
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
@@ -16,7 +21,7 @@ class Review(db.Model):
     username = db.Column(db.String, nullable=False)
     content = db.Column(db.String, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.now)
+    # created_at = db.Column(db.DateTime, default=datetime.now)
 
     def __repr__(self):
         return f'{self.movie_cd} : {self.content} by {self.username}, rating: {self.rating}'
@@ -24,14 +29,56 @@ class Review(db.Model):
 with app.app_context():
     db.create_all()
 
-    
+
+def get_box_office():
+    code=req.urlopen("http://www.cgv.co.kr/movies/?lt=1&ft=0")
+    soup=BeautifulSoup(code, "html.parser")
+
+    movies = []
+    movie_list = soup.select("li")
+    for movie in movie_list:
+        rank = movie.select_one("strong.rank")
+        # info = movie.select_one("div.box-contents")
+        title = movie.select_one("strong.title")
+        img_url = movie.select_one("img")
+
+        if title and img_url:  # title과 img_url이 모두 존재하는 경우에만 추가
+            movies.append({
+                'title': title.string,
+                'image': img_url.get("src"),
+                'rank': rank.string
+            })
+
+    return movies
+
+@app.route('/movie')
+def movie():
+    movies = get_box_office()
+
+    query = request.args.get('query')
+
+    res = requests.get(
+        f"http://kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json?key=f5eef3421c602c6cb7ea224104795888&movieNm={query}"
+    )
+    rjson = res.json()
+    movieNm = rjson["movieListResult"]["movieList"][0]['movieNm']
+
+    return render_template('movie.html', movies=movies, movie_Name=movieNm)
 
 @app.route('/review')
 def review():
+    query = request.args.get('query')
+    res = requests.get(f"http://kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json?key=f5eef3421c602c6cb7ea224104795888&movieNm={query}")
 
-    review_list = Review.query.all()
+    rjson = res.json()
+    movie_info = rjson["movieListResult"]["movieList"][0]
+    movie_cd = movie_info['movieCd']
+
+    review_list = Review.query.filter_by(id=movie_cd).all()
+    
     movie = {
         'movie_cd': '12345',
+        'movie_info': movie_info,
         'reviews': review_list,
     }
     return render_template("review.html", data = movie)
