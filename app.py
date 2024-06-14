@@ -84,7 +84,7 @@ def movie():
 @app.route('/signup', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        id_receive = request.form.get('id')
+        # id_receive = request.form.get('id')
         userid_receive = request.form.get('userid')
         username_receive = request.form.get('username')
         email_receive = request.form.get('email')
@@ -92,7 +92,7 @@ def register():
 
         hashed_password = generate_password_hash(password_receive)
 
-        user = User(id=id_receive, userid=userid_receive, username=username_receive, email=email_receive, password=hashed_password)
+        user = User(userid=userid_receive, username=username_receive, email=email_receive, password=hashed_password)
         db.session.add(user)
         db.session.commit()
 
