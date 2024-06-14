@@ -201,9 +201,10 @@ def review_with_movienm(movie_nm):
     rating = "리뷰가 없어요"
     if review_list:
         average_rating = db.session.query(func.avg(Review.rating)).filter_by(movie_cd=movie_cd).scalar()
+        print(average_rating)
         if average_rating is not None:
             rating = f"{average_rating:.1f}"  # 소수점 첫째 자리까지 포맷팅
-
+    
     movie = {
         'movie_info': movie_info,
         'reviews': review_list,
@@ -234,11 +235,13 @@ def review():
 
     review_list = Review.query.filter_by(movie_cd=movie_cd)
 
-    if not review_list:
-        rating = "리뷰가 없어요"
-    else:
-        average_rating  = db.session.query(func.avg(Review.rating)).filter_by(movie_cd=movie_cd).scalar()
-        rating = f"{average_rating:.1f}"  # 소수점 첫째 자리까지 포맷팅
+    # 기본값 설정
+    rating = "리뷰가 없어요"
+    if review_list:
+        average_rating = db.session.query(func.avg(Review.rating)).filter_by(movie_cd=movie_cd).scalar()
+        print(average_rating)
+        if average_rating is not None:
+            rating = f"{average_rating:.1f}"  # 소수점 첫째 자리까지 포맷팅
 
     
     movie = {
