@@ -1,7 +1,9 @@
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, g
 import os
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.sql import func
 
 import urllib.request as req
 
@@ -31,7 +33,9 @@ class User(db.Model):
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     movie_cd = db.Column(db.String, nullable=False)
-    username = db.Column(db.String, nullable=False)
+    movie_nm = db.Column(db.String, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
+    user = db.relationship('User', backref=db.backref('review_set')) 
     content = db.Column(db.String, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
@@ -41,6 +45,31 @@ class Review(db.Model):
 
 with app.app_context():
     db.create_all()
+
+
+
+#== 로그인된 사용자 전역변수로 관리==#
+@app.before_request
+def load_logged_in_user():
+    user_id = session.get('userid')
+    if user_id is None:
+        g.user = None
+    else:
+        g.user = User.query.filter_by(userid=user_id).first()
+
+# 마이페이지
+@app.route('/mypage')
+def mypage():
+
+    review_list = Review.query.filter_by(user = g.user).all()
+
+    reviews = {
+        'review_list': review_list,
+        'len' : len(review_list),
+    }
+
+    return render_template('mypage.html', data=reviews)
+
 
 
 # 영화 정보 크롤링
@@ -147,6 +176,8 @@ def logout():
     session.pop('userid', None)
     return jsonify({'msg': 'Logout successful'}), 200
 
+
+#=== 영화검색 결과 및 리뷰 보여주기 ===#
 @app.route('/review/<movie_nm>')
 def review_with_movienm(movie_nm):
     res = requests.get(f"http://kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json?key=f5eef3421c602c6cb7ea224104795888&movieNm={movie_nm}")
@@ -166,12 +197,21 @@ def review_with_movienm(movie_nm):
 
     review_list = Review.query.filter_by(movie_cd=movie_cd)
 
+    # 기본값 설정
+    rating = "리뷰가 없어요"
+    if review_list:
+        average_rating = db.session.query(func.avg(Review.rating)).filter_by(movie_cd=movie_cd).scalar()
+        if average_rating is not None:
+            rating = f"{average_rating:.1f}"  # 소수점 첫째 자리까지 포맷팅
+
     movie = {
         'movie_info': movie_info,
         'reviews': review_list,
+        'rating': rating,
     }
     
     return render_template("review.html", data = movie)
+
 
 @app.route('/review')
 def review():
@@ -193,17 +233,24 @@ def review():
     movie_cd = movie_info['movieCd']
 
     review_list = Review.query.filter_by(movie_cd=movie_cd)
+
+    if not review_list:
+        rating = "리뷰가 없어요"
+    else:
+        average_rating  = db.session.query(func.avg(Review.rating)).filter_by(movie_cd=movie_cd).scalar()
+        rating = f"{average_rating:.1f}"  # 소수점 첫째 자리까지 포맷팅
+
     
     movie = {
         'movie_info': movie_info,
         'reviews': review_list,
+        'rating': rating,
     }
     return render_template("review.html", data = movie)
 
 # 리뷰 생성
 @app.route('/review', methods=['POST'])
 def review_create():
-    username_receive = request.form.get("username")
     content_receive = request.form.get("content")
     rating_receive = request.form.get("rating")
     movie_receive = request.form.get("movie_cd")
@@ -211,7 +258,7 @@ def review_create():
     movienm_receive = request.form.get("movie_nm")
 
     # 데이터 DB에 저장
-    review = Review(movie_cd = movie_receive, username = username_receive, content = content_receive, rating = rating_receive)
+    review = Review(movie_cd = movie_receive, movie_nm=movienm_receive, user = g.user, content = content_receive, rating = rating_receive)
     db.session.add(review)
     db.session.commit()
 
@@ -232,10 +279,8 @@ def review_update():
     review_id = int(request.form.get('review_id'))
 
     update_data = Review.query.filter_by(id=review_id).first()
-    update_data.username  = request.form.get("username")
     update_data.content = request.form.get("content")
     update_data.rating = request.form.get("rating")
-    update_data.movie_cd = request.form.get("movie_cd")
 
     movienm_receive = request.form.get("movie_nm")
 
