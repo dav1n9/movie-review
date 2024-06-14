@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 import os
 from flask_sqlalchemy import SQLAlchemy
 
@@ -7,14 +7,26 @@ import urllib.request as req
 
 import requests
 from bs4 import BeautifulSoup
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] =\
         'sqlite:///' + os.path.join(basedir, 'database.db')
+app.secret_key = 's3cr3t_k3y_1234567890'
 
 db = SQLAlchemy(app)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    userid = db.Column(db.String(150), unique=True, nullable=False)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+
+    def __repr__(self):
+        return f'{self.userid} : {self.email}'
 
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -31,6 +43,7 @@ with app.app_context():
     db.create_all()
 
 
+# 영화 정보 크롤링
 def get_box_office():
     code=req.urlopen("http://www.cgv.co.kr/movies/?lt=1&ft=0")
     soup=BeautifulSoup(code, "html.parser")
@@ -52,6 +65,7 @@ def get_box_office():
 
     return movies
 
+# 메인 페이지
 @app.route('/movie')
 def movie():
     movies = get_box_office()
@@ -65,6 +79,73 @@ def movie():
     movieNm = rjson["movieListResult"]["movieList"][0]['movieNm']
 
     return render_template('movie.html', movies=movies, movie_Name=movieNm)
+
+# 회원가입
+@app.route('/signup', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        # id_receive = request.form.get('id')
+        userid_receive = request.form.get('userid')
+        username_receive = request.form.get('username')
+        email_receive = request.form.get('email')
+        password_receive = request.form.get('password')
+
+        hashed_password = generate_password_hash(password_receive)
+
+        user = User(userid=userid_receive, username=username_receive, email=email_receive, password=hashed_password)
+        db.session.add(user)
+        db.session.commit()
+
+        return redirect(url_for('movie'))
+    
+    return render_template('signup.html')
+
+# 로그인
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        userid = request.form.get('userid')
+        password = request.form.get('password')
+
+        user = User.query.filter_by(userid=userid).first()
+
+        if user is None or not check_password_hash(user.password, password):
+            return jsonify({'msg': 'Invalid username or password'}), 401
+
+        session['logged_in'] = True
+        session['userid'] = user.userid
+
+        return redirect(url_for('movie'))
+    
+    return render_template('login.html')
+
+# 로그인 상태 확인
+@app.route('/logged_in', methods=['GET'])
+def logged_in():
+    if 'logged_in' in session:
+        return jsonify({'msg': 'User is logged in'}), 200
+    else:
+        return jsonify({'msg': 'User is not logged in'}), 401
+
+# 로그인 사용자 이름 가져오기
+@app.route('/username', methods=['GET'])
+def get_username():
+    if 'logged_in' in session:
+        userid = session['userid']
+        user = User.query.filter_by(userid=userid).first()
+        if user:
+            return jsonify({'username': user.username}), 200
+        else:
+            return jsonify({'msg': 'User not found'}), 404
+    else:
+        return jsonify({'msg': 'User is not logged in'}), 401
+
+# 로그아웃
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.pop('logged_in', None)
+    session.pop('userid', None)
+    return jsonify({'msg': 'Logout successful'}), 200
 
 @app.route('/review/<movie_nm>')
 def review_with_movienm(movie_nm):
