@@ -289,5 +289,18 @@ def review_update():
 
     return redirect(url_for('review_with_movienm', movie_nm=movienm_receive))
 
+# 내 정보 수정
+@app.route('/mypage', methods=['POST'])
+def mypage_update():
+    update_user =  User.query.filter_by(id=g.user.id).first()
+
+    update_user.username = request.form.get("username")
+    update_user.email = request.form.get("email")
+
+    db.session.add(update_user)
+    db.session.commit()
+
+    return redirect(url_for('mypage'))
+
 if __name__ == "__main__":
     app.run(debug=True)
