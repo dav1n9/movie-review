@@ -17,6 +17,11 @@
         <a class="navbar-brand" href="/movie">
             <img src="https://e7.pngegg.com/pngimages/593/726/png-clipart-film-director-clapperboard-film-festival-filmmaking-actor-celebrities-camera-icon.png" alt="Logo" width="120" height="90">
         </a>
+        <div class="d-flex ml-auto">
+          {% if g.user %}
+              <span class="navbar-text mr-3">안녕하세요, {{ g.user.username }}</span>
+          {% endif %}
+        </div>
         </div>
     </nav>
     <div class="container">
@@ -50,7 +55,7 @@
 
           <div class="col-md-3 col-lg-6">
             <h4 class="mb-3">내 정보</h4>
-            <form class="needs-validation" novalidate="">
+            <form action="{{ url_for('mypage_update') }}" method="POST" class="needs-validation" novalidate="">
               <div class="row g-3">
                 <div class="col-12">
                   <label for="username" class="form-label">Username</label>
@@ -61,6 +66,7 @@
                       id="username"
                       placeholder="Username"
                       value="{{ g.user.username }}"
+                      name="username"
                       required=""
                     />
                     <div class="invalid-feedback">
@@ -70,15 +76,14 @@
                 </div>
 
                 <div class="col-12">
-                  <label for="email" class="form-label"
-                    >Email <span class="text-muted">(Optional)</span></label
-                  >
+                  <label for="email" class="form-label">Email</label>
                   <input
                     type="email"
                     class="form-control"
                     id="email"
                     placeholder="you@example.com"
                     value="{{ g.user.email }}"
+                    name="email"
                   />
                   <div class="invalid-feedback">
                     Please enter a valid email address for shipping updates.
