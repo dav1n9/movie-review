@@ -55,7 +55,14 @@ def load_logged_in_user():
 @app.route('/mypage')
 def mypage():
 
-    return f"user 이름은 {g.user.username}"
+    review_list = Review.query.filter_by(user = g.user).all()
+
+    reviews = {
+        'review_list': review_list,
+        'len' : len(review_list),
+    }
+
+    return render_template('mypage.html', data=reviews)
 
 
 
