@@ -32,6 +32,7 @@ class User(db.Model):
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     movie_cd = db.Column(db.String, nullable=False)
+    movie_nm = db.Column(db.String, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     user = db.relationship('User', backref=db.backref('review_set')) 
     content = db.Column(db.String, nullable=False)
@@ -240,7 +241,7 @@ def review_create():
     movienm_receive = request.form.get("movie_nm")
 
     # 데이터 DB에 저장
-    review = Review(movie_cd = movie_receive, user = g.user, content = content_receive, rating = rating_receive)
+    review = Review(movie_cd = movie_receive, movie_nm=movienm_receive, user = g.user, content = content_receive, rating = rating_receive)
     db.session.add(review)
     db.session.commit()
 
@@ -263,7 +264,6 @@ def review_update():
     update_data = Review.query.filter_by(id=review_id).first()
     update_data.content = request.form.get("content")
     update_data.rating = request.form.get("rating")
-    update_data.movie_cd = request.form.get("movie_cd")
 
     movienm_receive = request.form.get("movie_nm")
 
