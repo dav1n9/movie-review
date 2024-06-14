@@ -3,6 +3,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, g
 import os
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.sql import func
 
 import urllib.request as req
 
@@ -196,9 +197,17 @@ def review_with_movienm(movie_nm):
 
     review_list = Review.query.filter_by(movie_cd=movie_cd)
 
+    # 기본값 설정
+    rating = "리뷰가 없어요"
+    if review_list:
+        average_rating = db.session.query(func.avg(Review.rating)).filter_by(movie_cd=movie_cd).scalar()
+        if average_rating is not None:
+            rating = f"{average_rating:.1f}"  # 소수점 첫째 자리까지 포맷팅
+
     movie = {
         'movie_info': movie_info,
         'reviews': review_list,
+        'rating': rating,
     }
     
     return render_template("review.html", data = movie)
@@ -224,10 +233,18 @@ def review():
     movie_cd = movie_info['movieCd']
 
     review_list = Review.query.filter_by(movie_cd=movie_cd)
+
+    if not review_list:
+        rating = "리뷰가 없어요"
+    else:
+        average_rating  = db.session.query(func.avg(Review.rating)).filter_by(movie_cd=movie_cd).scalar()
+        rating = f"{average_rating:.1f}"  # 소수점 첫째 자리까지 포맷팅
+
     
     movie = {
         'movie_info': movie_info,
         'reviews': review_list,
+        'rating': rating,
     }
     return render_template("review.html", data = movie)
 
