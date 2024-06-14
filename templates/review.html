@@ -17,10 +17,12 @@
         <a class="navbar-brand" href="/movie">
             <img src="https://e7.pngegg.com/pngimages/593/726/png-clipart-film-director-clapperboard-film-festival-filmmaking-actor-celebrities-camera-icon.png" alt="Logo" width="120" height="90">
         </a>
-        <!-- 마이페이지 버튼 -->
+        <!-- 마이페이지 버튼 , 로그인하지 않으면 보이지 않음-->
+        {% if g.user%} 
         <ul class="navbar-nav ml-auto">
             <a href="/mypage" class="btn btn-outline-secondary">마이페이지</a>
         </ul>
+        {% endif %}
         </div>
     </nav> 
 
@@ -107,16 +109,13 @@
     
     <!-- 리뷰 -->
     <div class="container px-4 py-5">
+        <!-- 로그인하지 않으면 리뷰작성 버튼이 보이지 않는다. -->
+        {% if g.user%} 
         <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-3">
             <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#exampleModal">리뷰 작성하기</button>
         </div>
+        {% endif %}
         <div class="list-group">
-            {% if not data.reviews %}
-            <div class="d-flex gap-2 w-100 justify-content-between">
-                <h1>아직 리뷰가 없어요...</h1>
-            </div>
-            {% endif %}
-
             {% for review in data.reviews %}
             <a href="#" class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
                 <div class="d-flex gap-2 w-100 justify-content-between">
