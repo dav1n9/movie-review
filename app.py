@@ -46,18 +46,16 @@ with app.app_context():
 
 
 
-# 로그인된 사용자가 있다고 가정
+#== 로그인된 사용자 전역변수로 관리==#
 @app.before_request
 def load_logged_in_user():
-    find = User.query.filter_by(username="김다빈").first()
-    if find is None:
-        new_user = User(username="김다빈", password="123123", email="ddd@ddd.com")
-        db.session.add(new_user)
-        db.session.commit()
-        g.user = new_user
+    user_id = session.get('userid')
+    if user_id is None:
+        g.user = None
     else:
-        g.user = find
+        g.user = User.query.filter_by(userid=user_id).first()
 
+# 마이페이지
 @app.route('/mypage')
 def mypage():
 
